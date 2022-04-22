@@ -1879,7 +1879,7 @@ size_t MergeTreeData::clearEmptyParts()
     return cleared_count;
 }
 
-void MergeTreeData::clearOldDeletedMasks(bool startup)
+void MergeTreeData::clearOldDeletedMasks(bool startup) const
 {
     auto parts = getDataPartsVectorForInternalUsage();
     for (const auto & part : parts)
