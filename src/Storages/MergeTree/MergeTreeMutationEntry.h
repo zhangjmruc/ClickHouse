@@ -16,10 +16,15 @@ class IBackupEntry;
 /// Stored in FutureMergedMutatedPart and MergeTreeMutationEntry.
 enum class MutationType { Ordinary, Lightweight };
 
+enum class MutationType { Ordinary, Lightweight };
+
 /// A mutation entry for non-replicated MergeTree storage engines.
 /// Stores information about mutation in file mutation_*.txt.
 struct MergeTreeMutationEntry
 {
+    /// Type of mutation, used for lightweight delete.
+    MutationType type;
+
     time_t create_time = 0;
     MutationCommands commands;
 

@@ -1920,7 +1920,7 @@ std::vector<MergeTreeMutationStatus> ReplicatedMergeTreeQueue::getMutationsStatu
             formatAST(*command.ast, buf, false, true);
             result.push_back(MergeTreeMutationStatus
             {
-                MutationType::Ordinary, /// TODO: ReplicatedMergeTree supports lightweight delete.
+                MutationType::Ordinary,
                 entry.znode_name,
                 buf.str(),
                 entry.create_time,
