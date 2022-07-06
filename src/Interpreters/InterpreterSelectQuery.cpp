@@ -1935,7 +1935,7 @@ void InterpreterSelectQuery::executeFetchColumns(QueryProcessingStage::Enum proc
         && !settings.allow_experimental_query_deduplication
         && storage
         && storage->getName() != "MaterializedMySQL"
-        && !storage->hasLightweightDelete()
+        && !storage->hasLightweightDeletedMask()
         && !row_policy_filter
         && processing_stage == QueryProcessingStage::FetchColumns
         && query_analyzer->hasAggregation()
