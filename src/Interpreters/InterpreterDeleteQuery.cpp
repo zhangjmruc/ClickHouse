@@ -11,6 +11,7 @@
 #include <Storages/IStorage.h>
 #include <Storages/MutationCommands.h>
 #include <Storages/StorageMergeTree.h>
+#include <Storages/StorageReplicatedMergeTree.h>
 
 
 namespace DB
@@ -45,8 +46,11 @@ BlockIO InterpreterDeleteQuery::execute()
     /// First check table storage for validations.
     StoragePtr table = DatabaseCatalog::instance().getTable(table_id, getContext());
     auto storage_merge_tree = std::dynamic_pointer_cast<StorageMergeTree>(table);
-    if (!storage_merge_tree)
-        throw Exception(ErrorCodes::BAD_ARGUMENTS, "Only MergeTree tables are supported");
+    auto storage_replicated_merge_tree = std::dynamic_pointer_cast<StorageReplicatedMergeTree>(table);
+    if (!storage_merge_tree && !storage_replicated_merge_tree)
+    {
+        throw Exception(ErrorCodes::BAD_ARGUMENTS, "Only MergeTree or ReplicatedMergeTree tables are supported");
+    }
 
     checkStorageSupportsTransactionsIfNeeded(table, getContext());
     if (table->isStaticStorage())
@@ -81,7 +85,11 @@ BlockIO InterpreterDeleteQuery::execute()
 
     table->checkMutationIsPossible(mutation_commands, getContext()->getSettingsRef());
     MutationsInterpreter(table, metadata_snapshot, mutation_commands, getContext(), false, false).validate();
-    storage_merge_tree->mutate(mutation_commands, getContext(), MutationType::Lightweight);
+    /// Function mutate() with MutationType parameter is now only declared inside StorageMergeTree and StorageReplciatedMergeTree.
+    if (storage_merge_tree)
+        storage_merge_tree->mutate(mutation_commands, getContext(), MutationType::Lightweight);
+    else
+        storage_replicated_merge_tree->mutate(mutation_commands, getContext(), MutationType::Lightweight);
 
     return {};
 }

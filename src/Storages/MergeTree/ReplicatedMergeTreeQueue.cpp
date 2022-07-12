@@ -1920,7 +1920,7 @@ std::vector<MergeTreeMutationStatus> ReplicatedMergeTreeQueue::getMutationsStatu
             formatAST(*command.ast, buf, false, true);
             result.push_back(MergeTreeMutationStatus
             {
-                MutationType::Ordinary,
+                entry.type,
                 entry.znode_name,
                 buf.str(),
                 entry.create_time,
@@ -2248,7 +2248,7 @@ bool ReplicatedMergeTreeMergePredicate::partParticipatesInReplaceRange(const Mer
 }
 
 
-std::optional<std::pair<Int64, int>> ReplicatedMergeTreeMergePredicate::getDesiredMutationVersion(const MergeTreeData::DataPartPtr & part) const
+std::optional<std::pair<Int64, int>> ReplicatedMergeTreeMergePredicate::getDesiredMutationVersion(const MergeTreeData::DataPartPtr & part, bool & is_lightweight) const
 {
     /// Assigning mutations is easier than assigning merges because mutations appear in the same order as
     /// the order of their version numbers (see StorageReplicatedMergeTree::mutate).
@@ -2275,8 +2275,23 @@ std::optional<std::pair<Int64, int>> ReplicatedMergeTreeMergePredicate::getDesir
     Int64 max_version = in_partition->second.rbegin()->first;
 
     int alter_version = -1;
+    bool first = true;
+    MutationType first_mutation_type = MutationType::Ordinary;
     for (auto [mutation_version, mutation_status] : in_partition->second)
     {
+        /// TODO enable lightweight delete for compact part too.
+        if (mutation_version > current_version && isWidePart(part))
+        {
+            /// Mark the mutation type for the first mutation with bigger version than part current version
+            if (first)
+            {
+                first_mutation_type = mutation_status->entry->type;
+                first = false;
+            }
+            else if (first_mutation_type != mutation_status->entry->type)
+                break;
+        }
+
         max_version = mutation_version;
         if (mutation_status->entry->isAlterMutation())
         {
@@ -2294,6 +2309,9 @@ std::optional<std::pair<Int64, int>> ReplicatedMergeTreeMergePredicate::getDesir
 
     if (current_version >= max_version)
         return {};
+
+    if (first_mutation_type == MutationType::Lightweight)
+        is_lightweight = true;
 
     return std::make_pair(max_version, alter_version);
 }

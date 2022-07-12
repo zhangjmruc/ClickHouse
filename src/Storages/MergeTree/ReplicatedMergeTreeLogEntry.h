@@ -100,6 +100,9 @@ struct ReplicatedMergeTreeLogEntryData
     String column_name;
     String index_name;
 
+    /// For MUTATE_PART, true means lightweight delete.
+    bool is_lightweight = false;
+
     /// For DROP_RANGE, true means that the parts need not be deleted, but moved to the `detached` directory.
     bool detach = false;
 

@@ -4,6 +4,7 @@
 #include <base/types.h>
 #include <IO/WriteHelpers.h>
 #include <Storages/MutationCommands.h>
+#include <Storages/MergeTree/MergeTreeMutationEntry.h>
 #include <map>
 
 
@@ -43,6 +44,9 @@ struct ReplicatedMergeTreeMutationEntry
 
     /// Mutation commands which will give to MUTATE_PART entries
     MutationCommands commands;
+
+    /// Lightweight or Ordinary
+    MutationType type;
 
     /// Version of metadata. Not equal to -1 only if this mutation
     /// was created by ALTER MODIFY/DROP queries.

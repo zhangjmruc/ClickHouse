@@ -152,6 +152,10 @@ public:
     std::vector<MergeTreeMutationStatus> getMutationsStatus() const override;
     CancellationCode killMutation(const String & mutation_id) override;
 
+    /// Support lightweight delete.
+    void mutate(const MutationCommands & commands, ContextPtr context, MutationType type);
+    bool hasLightweightDelete() const override;
+
     /** Removes a replica from ZooKeeper. If there are no other replicas, it deletes the entire table from ZooKeeper.
       */
     void drop() override;
@@ -620,7 +624,8 @@ private:
         const UUID & new_part_uuid,
         Int64 mutation_version,
         int32_t alter_version,
-        int32_t log_version);
+        int32_t log_version,
+        const bool & is_lightweight);
 
     /// Exchange parts.
 

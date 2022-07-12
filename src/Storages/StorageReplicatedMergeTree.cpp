@@ -3156,7 +3156,8 @@ void StorageReplicatedMergeTree::mergeSelectingTask()
                     if (part->getBytesOnDisk() > max_source_part_size_for_mutation)
                         continue;
 
-                    std::optional<std::pair<Int64, int>> desired_mutation_version = merge_pred.getDesiredMutationVersion(part);
+                    bool is_lightweight = false;
+                    std::optional<std::pair<Int64, int>> desired_mutation_version = merge_pred.getDesiredMutationVersion(part, is_lightweight);
                     if (!desired_mutation_version)
                         continue;
 
@@ -3165,7 +3166,8 @@ void StorageReplicatedMergeTree::mergeSelectingTask()
                         future_merged_part->uuid,
                         desired_mutation_version->first,
                         desired_mutation_version->second,
-                        merge_pred.getVersion());
+                        merge_pred.getVersion(),
+                        is_lightweight);
 
                     if (create_result == CreateMergeEntryResult::Ok ||
                         create_result == CreateMergeEntryResult::LogUpdated)
@@ -3314,7 +3316,7 @@ StorageReplicatedMergeTree::CreateMergeEntryResult StorageReplicatedMergeTree::c
 
 
 StorageReplicatedMergeTree::CreateMergeEntryResult StorageReplicatedMergeTree::createLogEntryToMutatePart(
-    const IMergeTreeDataPart & part, const UUID & new_part_uuid, Int64 mutation_version, int32_t alter_version, int32_t log_version)
+    const IMergeTreeDataPart & part, const UUID & new_part_uuid, Int64 mutation_version, int32_t alter_version, int32_t log_version, const bool & is_lightweight)
 {
     auto zookeeper = getZooKeeper();
 
@@ -3344,6 +3346,7 @@ StorageReplicatedMergeTree::CreateMergeEntryResult StorageReplicatedMergeTree::c
     entry.new_part_uuid = new_part_uuid;
     entry.create_time = time(nullptr);
     entry.alter_version = alter_version;
+    entry.is_lightweight = is_lightweight;  /// Mark if it's a lightweight mutate
 
     Coordination::Requests ops;
     Coordination::Responses responses;
@@ -5846,8 +5849,17 @@ void StorageReplicatedMergeTree::fetchPartition(
     } while (!missing_parts.empty());
 }
 
+bool StorageReplicatedMergeTree::hasLightweightDelete() const
+{
+    return has_lightweight_delete_parts.load(std::memory_order_relaxed);
+}
 
 void StorageReplicatedMergeTree::mutate(const MutationCommands & commands, ContextPtr query_context)
+{
+    mutate(commands, query_context, MutationType::Ordinary);
+}
+
+void StorageReplicatedMergeTree::mutate(const MutationCommands & commands, ContextPtr query_context, MutationType type)
 {
     /// Overview of the mutation algorithm.
     ///
@@ -5905,6 +5917,9 @@ void StorageReplicatedMergeTree::mutate(const MutationCommands & commands, Conte
     ReplicatedMergeTreeMutationEntry mutation_entry;
     mutation_entry.source_replica = replica_name;
     mutation_entry.commands = commands;
+
+    /// Initialize the mutation type for the entry
+    mutation_entry.type = type;
 
     const String mutations_path = fs::path(zookeeper_path) / "mutations";
     const auto zookeeper = getZooKeeper();

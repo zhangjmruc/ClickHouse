@@ -128,8 +128,11 @@ void ReplicatedMergeTreeLogEntryData::writeText(WriteBuffer & out) const
             break;
 
         case MUTATE_PART:
-            out << "mutate\n"
-                << source_parts.at(0) << "\n"
+            if (is_lightweight)
+                out << "lightweight_mutate\n";
+            else
+                out << "mutate\n";
+            out << source_parts.at(0) << "\n"
                 << "to\n"
                 << new_part_name;
 
@@ -287,9 +290,10 @@ void ReplicatedMergeTreeLogEntryData::readText(ReadBuffer & in)
         replace_range_entry = std::make_shared<ReplaceRangeEntry>();
         replace_range_entry->readText(in);
     }
-    else if (type_str == "mutate")
+    else if (type_str == "mutate" || type_str == "lightweight_mutate")
     {
         type = MUTATE_PART;
+        is_lightweight = type_str == "lightweight_mutate";
         String source_part;
         in >> source_part >> "\n"
            >> "to\n"

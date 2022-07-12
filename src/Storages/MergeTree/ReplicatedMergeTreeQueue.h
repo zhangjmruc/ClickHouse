@@ -512,7 +512,7 @@ public:
     /// mutation version (and -1 as alter version). In other case, we return biggest mutation version with
     /// smallest alter version. This required, because we have to execute alter mutations sequentially and
     /// don't glue them together. Alter is rare operation, so it shouldn't affect performance.
-    std::optional<std::pair<Int64, int>> getDesiredMutationVersion(const MergeTreeData::DataPartPtr & part) const;
+    std::optional<std::pair<Int64, int>> getDesiredMutationVersion(const MergeTreeData::DataPartPtr & part, bool & is_lightweight) const;
 
     bool isMutationFinished(const ReplicatedMergeTreeMutationEntry & mutation) const;
 

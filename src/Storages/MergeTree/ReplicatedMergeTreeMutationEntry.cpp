@@ -11,7 +11,8 @@ namespace DB
 
 void ReplicatedMergeTreeMutationEntry::writeText(WriteBuffer & out) const
 {
-    out << "format version: 1\n"
+    out << "format version: 2\n"
+        << "type: " << type << "\n"
         << "create time: " << LocalDateTime(create_time ? create_time : time(nullptr)) << "\n"
         << "source replica: " << source_replica << "\n"
         << "block numbers count: " << block_numbers.size() << "\n";
@@ -34,7 +35,21 @@ void ReplicatedMergeTreeMutationEntry::writeText(WriteBuffer & out) const
 
 void ReplicatedMergeTreeMutationEntry::readText(ReadBuffer & in)
 {
-    in >> "format version: 1\n";
+    int format_version;
+    in >> "format version: " >> format_version >> "\n";
+
+    assert(format_version <= 2);
+
+    type = MutationType::Ordinary;
+    if (format_version == 2)
+    {
+        String type_str;
+        in >> "type: " >> type_str >> "\n";
+
+        auto type_value = magic_enum::enum_cast<MutationType>(type_str);
+        if (type_value.has_value())
+            type = type_value.value();
+    }
 
     LocalDateTime create_time_dt;
     in >> "create time: " >> create_time_dt >> "\n";
