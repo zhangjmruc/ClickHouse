@@ -108,6 +108,9 @@ ReplicatedMergeMutateTaskBase::PrepareResult MutateFromLogEntryTask::prepare()
     future_mutated_part->updatePath(storage, reserved_space.get());
     future_mutated_part->type = source_part->getType();
 
+    if (entry.is_lightweight)
+        future_mutated_part->mutation_type = MutationType::Lightweight;
+
     if (storage_settings_ptr->allow_remote_fs_zero_copy_replication)
     {
         if (auto disk = reserved_space->getDisk(); disk->supportZeroCopyReplication())
