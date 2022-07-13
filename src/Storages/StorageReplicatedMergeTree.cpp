@@ -5849,7 +5849,7 @@ void StorageReplicatedMergeTree::fetchPartition(
     } while (!missing_parts.empty());
 }
 
-bool StorageReplicatedMergeTree::hasLightweightDelete() const
+bool StorageReplicatedMergeTree::hasLightweightDeletedMask() const
 {
     return has_lightweight_delete_parts.load(std::memory_order_relaxed);
 }

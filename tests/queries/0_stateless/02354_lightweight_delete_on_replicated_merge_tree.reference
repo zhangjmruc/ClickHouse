@@ -1,0 +1,44 @@
+99
+99
+95
+0
+0
+-----lightweight mutation type-----
+1	DELETE WHERE (c % 5) = 1	1
+1	DELETE WHERE c = 4	1
+0	DROP INDEX i_c	1
+0	UPDATE b = -1 WHERE a < 3	1
+1	DELETE WHERE c = 3	1
+0	DROP COLUMN b	1
+-----Check that select and merge with lightweight delete.-----
+6
+0	0
+2	2
+5	5
+7	7
+8	8
+9	9
+0	0
+2	2
+5	5
+7	7
+8	8
+9	9
+t_light_r1	0	0_0_0_0_6	2
+t_light_r1	1	1_0_0_0_6	2
+t_light_r1	2	2_0_0_0_6	2
+t_light_r1	3	3_0_0_0_6	2
+t_light_r1	4	4_0_0_0_6	2
+6
+t_light_r1	0	0_0_0_1_6	2
+t_light_r1	2	2_0_0_1_6	2
+t_light_r1	3	3_0_0_1_6	1
+t_light_r1	4	4_0_0_1_6	1
+-----Check fetch part with lightweight delete-----
+0	0	0
+2	2	2
+3	3	3
+5	5	5
+6	6	6
+8	8	8
+9	9	9

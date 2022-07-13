@@ -740,7 +740,8 @@ void Fetcher::downloadBaseOrProjectionPartToDisk(
 
         if (file_name != "checksums.txt" &&
             file_name != "columns.txt" &&
-            file_name != IMergeTreeDataPart::DEFAULT_COMPRESSION_CODEC_FILE_NAME)
+            file_name != IMergeTreeDataPart::DEFAULT_COMPRESSION_CODEC_FILE_NAME &&
+            file_name != IMergeTreeDataPart::DELETED_ROWS_MARK_FILE_NAME)
             checksums.addFile(file_name, file_size, expected_hash);
 
         if (sync)

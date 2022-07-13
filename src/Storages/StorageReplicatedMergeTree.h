@@ -154,7 +154,7 @@ public:
 
     /// Support lightweight delete.
     void mutate(const MutationCommands & commands, ContextPtr context, MutationType type);
-    bool hasLightweightDelete() const override;
+    bool hasLightweightDeletedMask() const override;
 
     /** Removes a replica from ZooKeeper. If there are no other replicas, it deletes the entire table from ZooKeeper.
       */
